@@ -1,0 +1,30 @@
+name: Keepalive
+
+# GitHub automatically disables scheduled workflows if a repo has had
+# no commits for 60 days. This workflow makes a tiny commit once a month
+# so the backup.yml schedule never silently stops running.
+
+on:
+  schedule:
+    - cron: '0 3 1 * *'   # 1st of every month
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Touch keepalive file
+        run: date -u +"%Y-%m-%dT%H:%M:%SZ" > .keepalive
+
+      - name: Commit if changed
+        run: |
+          git config user.name "zeroplus-bot"
+          git config user.email "bot@zeroplus.local"
+          git add .keepalive
+          git diff --cached --quiet || git commit -m "chore: keepalive ping"
+          git push
